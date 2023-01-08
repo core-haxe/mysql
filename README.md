@@ -13,7 +13,7 @@ var db = new DatabaseConnection({
 db.open().then(result -> {
     return db.exec("CREATE TABLE Persons (PersonID int, LastName varchar(50), FirstName varchar(50);");
 }).then(result -> {
-    return db.exec("INSERT INTO Persons (PersonID, LastName, FirstName) VALUES (1, 'Ian", 'Harrigan');");
+    return db.exec("INSERT INTO Persons (PersonID, LastName, FirstName) VALUES (1, 'Ian', 'Harrigan');");
 }).then(result -> {
     return db.all("SELECT * FROM Persons;");
 }).then(result -> {
