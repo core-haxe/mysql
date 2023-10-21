@@ -2,6 +2,7 @@ package mysql.impl.nodejs;
 
 import promises.Promise;
 import mysql.externs.nodejs.MySql2;
+import js.node.Buffer;
 import mysql.externs.nodejs.Connection as NativeConnection;
 
 class DatabaseConnection extends DatabaseConnectionBase {
@@ -53,7 +54,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     resolve(new MySqlResult(this, null));
                 }
                 */
-
+                convertBuffersToBytes(rows);
                 resolve(new MySqlResult(this, rows));
             });
         });
@@ -67,6 +68,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     return;
                 }
 
+                convertBuffersToBytes(rows);
                 resolve(new MySqlResult(this, rows));
             });
         });
@@ -84,6 +86,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     resolve(new MySqlResult(this, []));
                 }
 
+                convertBuffersToBytes(rows);
                 resolve(new MySqlResult(this, rows));
             });
         });
@@ -102,5 +105,23 @@ class DatabaseConnection extends DatabaseConnectionBase {
             case _:
                 [param];
         }
-}
+    }
+
+    private function convertBuffersToBytes(data:Dynamic) {
+        if ((data is Array)) {
+            var array:Array<Dynamic> = data;
+            for (item in array) {
+                convertBuffersToBytes(item);
+            }
+        } else {
+            for (f in Reflect.fields(data)) {
+                var v = Reflect.field(data, f);
+                if ((v is Buffer)) {
+                    var buffer:Buffer = cast v;
+                    var bytes = buffer.hxToBytes();
+                    Reflect.setField(data, f, bytes);
+                }
+            }
+        }
+    }
 }
