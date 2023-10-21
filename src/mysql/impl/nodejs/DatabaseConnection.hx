@@ -48,12 +48,13 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     reject(new MySqlError("Error", error.message));
                     return;
                 }
-
+                /*
                 if (rows == null || rows.length == 0) {
                     resolve(new MySqlResult(this, null));
                 }
+                */
 
-                resolve(new MySqlResult(this, rows[0]));
+                resolve(new MySqlResult(this, rows));
             });
         });
     }
