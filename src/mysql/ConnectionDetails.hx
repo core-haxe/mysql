@@ -1,7 +1,7 @@
 package mysql;
 
 typedef ConnectionDetails = {
-    var database:String;
+    var ?database:String;
     var host:String;
     var ?port:Int;
     var ?user:String;
