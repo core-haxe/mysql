@@ -54,8 +54,14 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     resolve(new MySqlResult(this, null));
                 }
                 */
+                var result = null;
+                if (rows is Array) {
+                    result = rows[0];
+                } else {
+                    result = rows;
+                }
                 convertBuffersToBytes(rows);
-                resolve(new MySqlResult(this, rows));
+                resolve(new MySqlResult(this, result));
             });
         });
     }

@@ -44,11 +44,35 @@ class DatabaseConnection extends DatabaseConnectionBase {
             try {
                 sql = prepareSQL(sql, param);
                 var rs = _nativeConnection.request(sql);
-                if (rs.nfields == 0 || rs.length == 0) {
+                if (rs.length == 0) {
                     resolve(new MySqlResult(this, null));
                     return;
                 }
-                resolve(new MySqlResult(this, rs.next()));
+
+                var first:Dynamic = null;
+                // wtf is this all about, sys mysql is sooooo broken
+                // with an INSERT it returns a result set with a length of 1
+                // but if you try and use that, it will throw an exception
+                // so we'll catch it and ignore it - so dodgey 
+                try {
+                    var results = rs.results();
+                    for (r in results) {
+                        if (first == null) {
+                            first = r;
+                            break;
+                        }
+                        trace(r);
+                    }
+                } catch (e:Dynamic) {
+                    first = {};
+                }
+
+                if (sql.indexOf("INSERT ") != -1) {
+                    var lastInsertedId = _nativeConnection.lastInsertId();
+                    first.insertId = lastInsertedId;
+                }
+
+                resolve(new MySqlResult(this, first));
             } catch (e:Dynamic) {
                 reject(new MySqlError("Error", e));
             }
@@ -63,6 +87,24 @@ class DatabaseConnection extends DatabaseConnectionBase {
                 var records:Array<Dynamic> = [];
                 while (rs.hasNext()) {
                     records.push(rs.next());
+                }
+                resolve(new MySqlResult(this, records));
+            } catch (e:Dynamic) {
+                reject(new MySqlError("Error", e));
+            }
+        });
+    }
+
+    public override function query(sql:String, ?param:Dynamic):Promise<MySqlResult<Array<Dynamic>>> {
+        return new Promise((resolve, reject) -> {
+            try {
+                sql = prepareSQL(sql, param);
+                var rs = _nativeConnection.request(sql);
+                var records:Array<Dynamic> = [];
+                if (rs.length > 0) { // need to check the length first otherwise HL gives an access violation (!)
+                    while (rs.hasNext()) {
+                        records.push(rs.next());
+                    }
                 }
                 resolve(new MySqlResult(this, records));
             } catch (e:Dynamic) {
@@ -100,7 +142,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     trace("UKNONWN:", Type.typeof(p));
                     p;
             }
-            return v;
+            return Std.string(v);
         });
         sql = sql.trim();
         if (!sql.endsWith(";")) {
