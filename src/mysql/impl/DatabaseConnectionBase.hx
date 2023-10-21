@@ -29,6 +29,12 @@ class DatabaseConnectionBase {
         });
     }
 
+    public function query(sql:String, ?param:Dynamic):Promise<MySqlResult<Array<Dynamic>>> {
+        return new Promise((resolve, reject) -> {
+            reject(new MySqlError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::query" not implemented'));
+        });
+    }
+
     public function all(sql:String, ?param:Dynamic):Promise<MySqlResult<Array<Dynamic>>> {
         return new Promise((resolve, reject) -> {
             reject(new MySqlError("not implemented", 'function "${Type.getClassName(Type.getClass(this))}::all" not implemented'));

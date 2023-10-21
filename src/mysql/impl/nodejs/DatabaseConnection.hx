@@ -58,6 +58,19 @@ class DatabaseConnection extends DatabaseConnectionBase {
         });
     }
 
+    public override function query(sql:String, ?param:Dynamic):Promise<MySqlResult<Array<Dynamic>>> {
+        return new Promise((resolve, reject) -> {
+            _nativeConnection.query(sql, params(param), (error, rows, fields) -> {
+                if (error != null) {
+                    reject(new MySqlError("Error", error.message));
+                    return;
+                }
+
+                resolve(new MySqlResult(this, rows));
+            });
+        });
+    }
+
     public override function all(sql:String, ?param:Dynamic):Promise<MySqlResult<Array<Dynamic>>> {
         return new Promise((resolve, reject) -> {
             _nativeConnection.execute(sql, params(param), (error, rows, fields) -> {
