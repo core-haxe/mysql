@@ -129,7 +129,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
             var p = params.shift();
             var v:Any = switch (Type.typeof(p)) {
                 case TClass(String):
-                    "\"" + p + "\"";
+                    "\"" + _nativeConnection.escape(p) + "\"";
                 case TBool:
                     p == true ? 1 : 0;
                 case TFloat:
