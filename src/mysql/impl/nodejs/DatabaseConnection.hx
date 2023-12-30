@@ -33,7 +33,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
         return new Promise((resolve, reject) -> {
             _nativeConnection.execute(sql, (error, rows, fields) -> {
                 if (error != null) {
-                    reject(new MySqlError("Error", error.message));
+                    if (!checkForDisconnection(error.message, CALL_EXEC, sql, null, resolve, reject)) {
+                        reject(new MySqlError("Error", error.message));
+                    }
                     return;
                 }
 
@@ -46,7 +48,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
         return new Promise((resolve, reject) -> {
             _nativeConnection.execute(sql, params(param), (error, rows, fields) -> {
                 if (error != null) {
-                    reject(new MySqlError("Error", error.message));
+                    if (!checkForDisconnection(error.message, CALL_GET, sql, param, resolve, reject)) {
+                        reject(new MySqlError("Error", error.message));
+                    }
                     return;
                 }
                 /*
@@ -70,7 +74,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
         return new Promise((resolve, reject) -> {
             _nativeConnection.query(sql, params(param), (error, rows, fields) -> {
                 if (error != null) {
-                    reject(new MySqlError("Error", error.message));
+                    if (!checkForDisconnection(error.message, CALL_QUERY, sql, param, resolve, reject)) {
+                        reject(new MySqlError("Error", error.message));
+                    }
                     return;
                 }
 
@@ -84,7 +90,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
         return new Promise((resolve, reject) -> {
             _nativeConnection.execute(sql, params(param), (error, rows, fields) -> {
                 if (error != null) {
-                    reject(new MySqlError("Error", error.message));
+                    if (!checkForDisconnection(error.message, CALL_ALL, sql, param, resolve, reject)) {
+                        reject(new MySqlError("Error", error.message));
+                    }
                     return;
                 }
 

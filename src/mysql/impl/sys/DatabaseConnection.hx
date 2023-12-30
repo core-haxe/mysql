@@ -34,7 +34,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
                 _nativeConnection.request(sql);
                 resolve(new MySqlResult(this, true));
             } catch (e:Dynamic) {
-                reject(new MySqlError("Error", e));
+                if (!checkForDisconnection(Std.string(e), CALL_EXEC, sql, null, resolve, reject)) {
+                    reject(new MySqlError("Error", e));
+                }
             }
         });
     }
@@ -74,7 +76,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
 
                 resolve(new MySqlResult(this, first));
             } catch (e:Dynamic) {
-                reject(new MySqlError("Error", e));
+                if (!checkForDisconnection(Std.string(e), CALL_GET, sql, param, resolve, reject)) {
+                    reject(new MySqlError("Error", e));
+                }
             }
         });
     }
@@ -90,7 +94,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
                 }
                 resolve(new MySqlResult(this, records));
             } catch (e:Dynamic) {
-                reject(new MySqlError("Error", e));
+                if (!checkForDisconnection(Std.string(e), CALL_ALL, sql, param, resolve, reject)) {
+                    reject(new MySqlError("Error", e));
+                }
             }
         });
     }
@@ -108,7 +114,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
                 }
                 resolve(new MySqlResult(this, records));
             } catch (e:Dynamic) {
-                reject(new MySqlError("Error", e));
+                if (!checkForDisconnection(Std.string(e), CALL_QUERY, sql, param, resolve, reject)) {
+                    reject(new MySqlError("Error", e));
+                }
             }
         });
     }
