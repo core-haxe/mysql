@@ -31,8 +31,13 @@ class DatabaseConnection extends DatabaseConnectionBase {
         return new Promise((resolve, reject) -> {
             try {
                 sql = prepareSQL(sql);
-                _nativeConnection.request(sql);
-                resolve(new MySqlResult(this, true));
+                var rs = _nativeConnection.request(sql);
+                var result = new MySqlResult(this, true);
+                if (rs != null) {
+                    result.lastInsertId = _nativeConnection.lastInsertId();
+                    result.affectedRows = rs.length;
+                }
+                resolve(result);
             } catch (e:Dynamic) {
                 if (!checkForDisconnection(Std.string(e), CALL_EXEC, sql, null, resolve, reject)) {
                     reject(new MySqlError("Error", e));
@@ -47,7 +52,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
                 sql = prepareSQL(sql, param);
                 var rs = _nativeConnection.request(sql);
                 if (rs.length == 0) {
-                    resolve(new MySqlResult(this, null));
+                    var result = new MySqlResult(this, null);
+                    result.affectedRows = 0;
+                    resolve(result);
                     return;
                 }
 
@@ -73,8 +80,10 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     var lastInsertedId = _nativeConnection.lastInsertId();
                     first.insertId = lastInsertedId;
                 }
-
-                resolve(new MySqlResult(this, first));
+                var result = new MySqlResult(this, first);
+                result.lastInsertId = _nativeConnection.lastInsertId();
+                result.affectedRows = rs.length;
+                resolve(result);
             } catch (e:Dynamic) {
                 if (!checkForDisconnection(Std.string(e), CALL_GET, sql, param, resolve, reject)) {
                     reject(new MySqlError("Error", e));

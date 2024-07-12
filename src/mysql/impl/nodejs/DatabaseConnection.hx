@@ -50,7 +50,18 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     return;
                 }
 
-                resolve(new MySqlResult(this, true));
+                var result:Dynamic = null;
+                if (rows is Array) {
+                    result = rows[0];
+                } else {
+                    result = rows;
+                }
+                var mysqlResult = new MySqlResult(this, true);
+                if (result != null) {
+                    mysqlResult.affectedRows = result.affectedRows;
+                    mysqlResult.lastInsertId = result.insertId;
+                }
+                resolve(mysqlResult);
             });
         });
     }
@@ -70,14 +81,19 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     resolve(new MySqlResult(this, null));
                 }
                 */
-                var result = null;
+                var result:Dynamic = null;
                 if (rows is Array) {
                     result = rows[0];
                 } else {
                     result = rows;
                 }
                 convertBuffersToBytes(rows);
-                resolve(new MySqlResult(this, result));
+                var mysqlResult = new MySqlResult(this, result);
+                if (result != null) {
+                    mysqlResult.affectedRows = result.affectedRows;
+                    mysqlResult.lastInsertId = result.insertId;
+                }
+                resolve(mysqlResult);
             });
         });
     }
