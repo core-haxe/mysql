@@ -98,9 +98,11 @@ class DatabaseConnection extends DatabaseConnectionBase {
                 sql = prepareSQL(sql, param);
                 var rs = _nativeConnection.request(sql);
                 var records:Array<Dynamic> = [];
-                while (rs.hasNext()) {
-                    records.push(rs.next());
-                }
+                try {
+                    while (rs.hasNext()) {
+                        records.push(rs.next());
+                    }
+                } catch (ex:Dynamic) { }
                 resolve(new MySqlResult(this, records));
             } catch (e:Dynamic) {
                 if (!checkForDisconnection(Std.string(e), CALL_ALL, sql, param, resolve, reject)) {
