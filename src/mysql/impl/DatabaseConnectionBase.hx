@@ -58,7 +58,10 @@ class DatabaseConnectionBase {
             isDisconnectedError = true;
         } else if (error.toLowerCase().indexOf("failed to send packet") != -1)  {
             isDisconnectedError = true;
+        } else if (error.toLowerCase().indexOf("lost connection to mysql server") != -1)  {
+            isDisconnectedError = true;
         }
+
         if (isDisconnectedError) {
             cacheCall({
                 call: call,

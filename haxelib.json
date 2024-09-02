@@ -9,7 +9,9 @@
     ],
     "releasenote": "0.0.0",
     "dependencies": {
-        "promises": ""
+        "libmysqlclient": "",
+        "promises": "",
+        "logging": ""
     },
     "classPath": "src",
     "name": "mysql",

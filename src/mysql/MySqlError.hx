@@ -8,4 +8,8 @@ class MySqlError {
         this.name = name;
         this.message = message;
     }
+
+    public function toString():String {
+        return name + ": " + message;
+    }
 }

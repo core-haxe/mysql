@@ -13,6 +13,11 @@ class DatabaseConnection extends DatabaseConnectionBase {
 
     public override function open():Promise<MySqlResult<Bool>> {
         return new Promise((resolve, reject) -> {
+            var port = 3306;
+            if (this.connectionDetails.port != null) {
+                port = this.connectionDetails.port;
+            }
+    
             log.debug("creating connection:", {
                 host: this.connectionDetails.host,
                 user: this.connectionDetails.user,
@@ -25,6 +30,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
                 user: this.connectionDetails.user,
                 password: this.connectionDetails.pass,
                 database: this.connectionDetails.database,
+                port: port,
                 rowsAsArray: false
             });
 

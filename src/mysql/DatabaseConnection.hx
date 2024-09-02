@@ -4,6 +4,10 @@ package mysql;
 
 typedef DatabaseConnection = mysql.impl.nodejs.DatabaseConnection;
 
+#elseif cpp
+
+typedef DatabaseConnection = mysql.impl.cpp.DatabaseConnection;
+
 #elseif sys
 
 typedef DatabaseConnection = mysql.impl.sys.DatabaseConnection;
