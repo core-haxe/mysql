@@ -5,9 +5,9 @@ import promises.Promise;
 class DatabaseConnectionBase {
     public var connectionDetails:ConnectionDetails = null;
 
-    public var autoReconnect:Bool = false;
+    public var autoReconnect:Bool = true;
     public var autoReconnectIntervalMS:Int = 1000;
-    public var replayQueriesOnReconnection:Bool = false;
+    public var replayQueriesOnReconnection:Bool = true;
 
     public function new(details:ConnectionDetails) {
         connectionDetails = details;
@@ -70,7 +70,8 @@ class DatabaseConnectionBase {
                 resolve: resolve,
                 reject: reject
             });
-            haxe.Timer.delay(attemptReconnect, autoReconnectIntervalMS);
+            //haxe.Timer.delay(attemptReconnect, autoReconnectIntervalMS);
+            attemptReconnect();
             return true;
         }
         return false;
