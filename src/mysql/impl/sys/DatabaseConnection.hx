@@ -70,7 +70,6 @@ class DatabaseConnection extends DatabaseConnectionBase {
                             first = r;
                             break;
                         }
-                        trace(r);
                     }
                 } catch (e:Dynamic) {
                     first = {};
@@ -145,7 +144,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
 
         var r = ~/\?/gm;
         sql = r.map(sql, f -> {
-            var p = params.shift();
+            var p:Dynamic = params.shift();
             var v:Any = switch (Type.typeof(p)) {
                 case TClass(String):
                     "\"" + _nativeConnection.escape(p) + "\"";
