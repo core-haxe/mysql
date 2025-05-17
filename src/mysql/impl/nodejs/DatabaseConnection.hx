@@ -2,6 +2,7 @@ package mysql.impl.nodejs;
 
 import promises.Promise;
 import mysql.externs.nodejs.MySql2;
+import mysql.externs.nodejs.MySql2Types;
 import js.node.Buffer;
 import mysql.externs.nodejs.Connection as NativeConnection;
 import logging.Logger;
@@ -93,7 +94,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
                 } else {
                     result = rows;
                 }
-                convertBuffersToBytes(rows);
+                convertToHaxeTypes(rows, fieldsToMap(fields));
                 var mysqlResult = new MySqlResult(this, result);
                 if (result != null) {
                     mysqlResult.affectedRows = result.affectedRows;
@@ -115,7 +116,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     return;
                 }
 
-                convertBuffersToBytes(rows);
+                convertToHaxeTypes(rows, fieldsToMap(fields));
                 resolve(new MySqlResult(this, rows));
             });
         });
@@ -136,7 +137,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     resolve(new MySqlResult(this, []));
                 }
 
-                convertBuffersToBytes(rows);
+                convertToHaxeTypes(rows, fieldsToMap(fields));
                 resolve(new MySqlResult(this, rows));
             });
         });
@@ -157,11 +158,22 @@ class DatabaseConnection extends DatabaseConnectionBase {
         }
     }
 
-    private function convertBuffersToBytes(data:Dynamic) {
+    private function fieldsToMap(fields:Array<Dynamic>):Map<String, Dynamic> {
+        var map:Map<String, Dynamic> = [];
+        if (fields == null) {
+            return map;
+        }
+        for (f in fields) {
+            map.set(f.name, f);
+        }
+        return map;
+    }
+
+    private function convertToHaxeTypes(data:Dynamic, fieldInfo:Map<String, Dynamic>) {
         if ((data is Array)) {
             var array:Array<Dynamic> = data;
             for (item in array) {
-                convertBuffersToBytes(item);
+                convertToHaxeTypes(item, fieldInfo);
             }
         } else {
             for (f in Reflect.fields(data)) {
@@ -170,6 +182,15 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     var buffer:Buffer = cast v;
                     var bytes = buffer.hxToBytes();
                     Reflect.setField(data, f, bytes);
+                } else if (fieldInfo.exists(f)) {
+                    var info = fieldInfo.get(f);
+                    switch (info.type) {
+                        case TINY | SHORT | LONG | INT24:
+                            Reflect.setField(data, f, Std.parseInt(v));
+                        case DECIMAL | DOUBLE | FLOAT | NEWDECIMAL:
+                            Reflect.setField(data, f, Std.parseFloat(v));
+                        case _:    
+                    }
                 }
             }
         }
