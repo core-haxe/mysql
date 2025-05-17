@@ -1,0 +1,7 @@
+--class-path .
+--main TestAll
+
+-lib utest
+-lib mysql
+
+-D no-deprecation-warnings

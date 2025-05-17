@@ -1,0 +1,4 @@
+common.hxml
+
+--cpp build/hxcpp
+--cmd .\build\hxcpp\TestAll
