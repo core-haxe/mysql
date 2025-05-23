@@ -10,6 +10,7 @@ class TestAll {
         var runner = new Runner();
         
         runner.addCase(new TestQuery());
+        runner.addCase(new TestJson());
 
         Report.create(runner, SuccessResultsDisplayMode.AlwaysShowSuccessResults, HeaderDisplayMode.NeverShowHeader);
         runner.run();

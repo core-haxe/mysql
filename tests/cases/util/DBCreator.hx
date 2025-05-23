@@ -41,6 +41,8 @@ class DBCreator {
                 connection = c;
                 var promises = [];
 
+                promises.push(delete.bind(false));
+
                 promises.push(query.bind(connection, "CREATE DATABASE IF NOT EXISTS persons2;"));
 
                 promises.push(query.bind(connection, "USE persons2"));
@@ -52,6 +54,7 @@ class DBCreator {
                     iconId int,
                     contractDocument blob,
                     amount DECIMAL(20,6),
+                    settings json,
                     PRIMARY KEY (personId)
                 );"));
     
@@ -99,10 +102,17 @@ class DBCreator {
             promises.push(query.bind(connection, "INSERT INTO Icon (iconId, path) VALUES (2, '/somepath/icon2.png');"));
             promises.push(query.bind(connection, "INSERT INTO Icon (iconId, path) VALUES (3, '/somepath/icon3.png');"));
 
+            promises.push(query.bind(connection, "INSERT INTO Person (personId, firstName, lastName, iconId, contractDocument, amount, settings) VALUES (1, 'Ian', 'Harrigan', 1, X'746869732069732069616e7320636f6e747261637420646f63756d656e74', 123.456, '{\"intSetting\": 11}');"));
+            promises.push(query.bind(connection, "INSERT INTO Person (personId, firstName, lastName, iconId, amount, settings) VALUES (2, 'Bob', 'Barker', 3, 111.222, '{\"intSetting\": 22}');"));
+            promises.push(query.bind(connection, "INSERT INTO Person (personId, firstName, lastName, iconId, amount, settings) VALUES (3, 'Tim', 'Mallot', 2, 222.333, '{\"intSetting\": 33}');"));
+            promises.push(query.bind(connection, "INSERT INTO Person (personId, firstName, lastName, iconId, amount, settings) VALUES (4, 'Jim', 'Parker', 1, 333.444, '{\"intSetting\": 44}');"));
+
+            /*
             promises.push(query.bind(connection, "INSERT INTO Person (personId, firstName, lastName, iconId, contractDocument, amount) VALUES (1, 'Ian', 'Harrigan', 1, X'746869732069732069616e7320636f6e747261637420646f63756d656e74', 123.456);"));
             promises.push(query.bind(connection, "INSERT INTO Person (personId, firstName, lastName, iconId, amount) VALUES (2, 'Bob', 'Barker', 3, 111.222);"));
             promises.push(query.bind(connection, "INSERT INTO Person (personId, firstName, lastName, iconId, amount) VALUES (3, 'Tim', 'Mallot', 2, 222.333);"));
             promises.push(query.bind(connection, "INSERT INTO Person (personId, firstName, lastName, iconId, amount) VALUES (4, 'Jim', 'Parker', 1, 333.444);"));
+            */
 
             promises.push(query.bind(connection, "INSERT INTO Organization (organizationId, name, iconId) VALUES (1, 'ACME Inc', 2);"));
             promises.push(query.bind(connection, "INSERT INTO Organization (organizationId, name, iconId) VALUES (2, 'Haxe LLC', 1);"));
@@ -134,10 +144,12 @@ class DBCreator {
         });
     }
 
-    public static function delete():Promise<Bool> {
+    public static function delete(closeConnection:Bool = true):Promise<Bool> {
         return new Promise((resolve, reject) -> {
             query(connection, "DROP DATABASE IF EXISTS persons2;").then(_ -> {
-                connection.close();
+                if (closeConnection) {
+                    connection.close();
+                }
                 resolve(true);
             }, error -> {
                 reject(error);
