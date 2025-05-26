@@ -178,6 +178,9 @@ class DatabaseConnection extends DatabaseConnectionBase {
         } else {
             for (f in Reflect.fields(data)) {
                 var v = Reflect.field(data, f);
+                if (v == null) {
+                    continue;
+                }
                 if ((v is Buffer)) {
                     var buffer:Buffer = cast v;
                     var bytes = buffer.hxToBytes();
