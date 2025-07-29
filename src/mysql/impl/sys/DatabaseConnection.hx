@@ -168,4 +168,10 @@ class DatabaseConnection extends DatabaseConnectionBase {
         }
         return sql;
     }
+
+    override function close() {
+		super.close();
+		if (_nativeConnection != null)
+			_nativeConnection.close();
+	}
 }
