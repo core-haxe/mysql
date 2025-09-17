@@ -6,6 +6,8 @@ import js.lib.Error;
 extern class Connection {
     public function execute(sql:String, ?params:Dynamic, ?cb:MySql2Error->Array<Dynamic>->Dynamic->Void):Void;
     public function query(sql:String, ?params:Dynamic, ?cb:MySql2Error->Array<Dynamic>->Dynamic->Void):Void;
+    public function prepare(sql:String, ?cb:MySql2Error->Statement->Void):Void;
+    public function unprepare(sql:String):Void;
     public function connect(?cb:MySql2Error->Void):Void;
     public function end(?cb:MySql2Error->Void):Void;
 }
