@@ -5,14 +5,12 @@ import mysql.externs.nodejs.MySql2;
 import mysql.externs.nodejs.MySql2Types;
 import js.node.Buffer;
 import mysql.externs.nodejs.Connection as NativeConnection;
-import mysql.externs.nodejs.Pool as NativePool;
 import logging.Logger;
 
 class DatabaseConnection extends DatabaseConnectionBase {
     private static var log = new Logger(DatabaseConnection, true);
 
     private var _nativeConnection:NativeConnection = null;
-    private var _nativePool:NativePool = null;
 
     public override function open():Promise<MySqlResult<Bool>> {
         return new Promise((resolve, reject) -> {
@@ -28,237 +26,129 @@ class DatabaseConnection extends DatabaseConnectionBase {
                 database: this.connectionDetails.database,
                 rowsAsArray: false
             });
+            _nativeConnection = MySql2.createConnection({
+                host: this.connectionDetails.host,
+                user: this.connectionDetails.user,
+                password: this.connectionDetails.pass,
+                database: this.connectionDetails.database,
+                port: port,
+                rowsAsArray: false
+            });
 
-            var usePool = !this.connectionDetails.noPooling;
-
-            if (usePool) {
-                _nativePool = MySql2.createPool({
-                    host: this.connectionDetails.host,
-                    user: this.connectionDetails.user,
-                    password: this.connectionDetails.pass,
-                    database: this.connectionDetails.database,
-                    port: port,
-                    rowsAsArray: false,
-                    waitForConnections: true,
-                    connectionLimit: 10,
-                    queueLimit: 0
-                });            
+            _nativeConnection.connect(error -> {
+                if (error != null) {
+                    reject(new MySqlError("Error", error.message));
+                    return;
+                }
 
                 resolve(new MySqlResult(this, true));
-            } else {
-                _nativeConnection = MySql2.createConnection({
-                    host: this.connectionDetails.host,
-                    user: this.connectionDetails.user,
-                    password: this.connectionDetails.pass,
-                    database: this.connectionDetails.database,
-                    port: port,
-                    rowsAsArray: false
-                });
-                _nativeConnection.connect(error -> {
-                    if (error != null) {
-                        reject(new MySqlError("Error", error.message));
-                        return;
-                    }
-
-                    resolve(new MySqlResult(this, true));
-                });
-            }
+            });
         });
     }
     
     public override function exec(sql:String):Promise<MySqlResult<Bool>> {
         return new Promise((resolve, reject) -> {
             log.data("exec:", sql);
-            if (_nativePool != null) {
-                _nativePool.execute(sql, (error, rows, fields) -> {
-                    if (error != null) {
-                        if (!checkForDisconnection(error.message, CALL_EXEC, sql, null, resolve, reject)) {
-                            reject(new MySqlError("Error", error.message));
-                        }
-                        return;
+            _nativeConnection.execute(sql, (error, rows, fields) -> {
+                _nativeConnection.unprepare(sql);
+                if (error != null) {
+                    if (!checkForDisconnection(error.message, CALL_EXEC, sql, null, resolve, reject)) {
+                        reject(new MySqlError("Error", error.message));
                     }
+                    return;
+                }
 
-                    var result:Dynamic = null;
-                    if (rows is Array) {
-                        result = rows[0];
-                    } else {
-                        result = rows;
-                    }
-                    var mysqlResult = new MySqlResult(this, true);
-                    if (result != null) {
-                        mysqlResult.affectedRows = result.affectedRows;
-                        mysqlResult.lastInsertId = result.insertId;
-                    }
-                    resolve(mysqlResult);
-                });
-            } else if (_nativeConnection != null) {
-                _nativeConnection.execute(sql, (error, rows, fields) -> {
-                    _nativeConnection.unprepare(sql);
-                    if (error != null) {
-                        if (!checkForDisconnection(error.message, CALL_EXEC, sql, null, resolve, reject)) {
-                            reject(new MySqlError("Error", error.message));
-                        }
-                        return;
-                    }
-
-                    var result:Dynamic = null;
-                    if (rows is Array) {
-                        result = rows[0];
-                    } else {
-                        result = rows;
-                    }
-                    var mysqlResult = new MySqlResult(this, true);
-                    if (result != null) {
-                        mysqlResult.affectedRows = result.affectedRows;
-                        mysqlResult.lastInsertId = result.insertId;
-                    }
-                    resolve(mysqlResult);
-                });
-            }
+                var result:Dynamic = null;
+                if (rows is Array) {
+                    result = rows[0];
+                } else {
+                    result = rows;
+                }
+                var mysqlResult = new MySqlResult(this, true);
+                if (result != null) {
+                    mysqlResult.affectedRows = result.affectedRows;
+                    mysqlResult.lastInsertId = result.insertId;
+                }
+                resolve(mysqlResult);
+            });
         });
     }
 
     public override function get(sql:String, ?param:Dynamic):Promise<MySqlResult<Dynamic>> {
         return new Promise((resolve, reject) -> {
             log.data("get:", [sql, param]);
-            if (_nativePool != null) {
-                _nativePool.execute(sql, params(param), (error, rows, fields) -> {
-                    if (error != null) {
-                        if (!checkForDisconnection(error.message, CALL_GET, sql, param, resolve, reject)) {
-                            reject(new MySqlError("Error", error.message));
-                        }
-                        return;
+            _nativeConnection.execute(sql, params(param), (error, rows, fields) -> {
+                _nativeConnection.unprepare(sql);
+                if (error != null) {
+                    if (!checkForDisconnection(error.message, CALL_GET, sql, param, resolve, reject)) {
+                        reject(new MySqlError("Error", error.message));
                     }
-                    /*
-                    if (rows == null || rows.length == 0) {
-                        resolve(new MySqlResult(this, null));
-                    }
-                    */
-                    var result:Dynamic = null;
-                    if (rows is Array) {
-                        result = rows[0];
-                    } else {
-                        result = rows;
-                    }
-                    convertToHaxeTypes(rows, fieldsToMap(fields));
-                    var mysqlResult = new MySqlResult(this, result);
-                    if (result != null) {
-                        mysqlResult.affectedRows = result.affectedRows;
-                        mysqlResult.lastInsertId = result.insertId;
-                    }
-                    resolve(mysqlResult);
-                });
-            } else if (_nativeConnection != null) {
-                _nativeConnection.execute(sql, params(param), (error, rows, fields) -> {
-                    _nativeConnection.unprepare(sql);
-                    if (error != null) {
-                        if (!checkForDisconnection(error.message, CALL_GET, sql, param, resolve, reject)) {
-                            reject(new MySqlError("Error", error.message));
-                        }
-                        return;
-                    }
-                    /*
-                    if (rows == null || rows.length == 0) {
-                        resolve(new MySqlResult(this, null));
-                    }
-                    */
-                    var result:Dynamic = null;
-                    if (rows is Array) {
-                        result = rows[0];
-                    } else {
-                        result = rows;
-                    }
-                    convertToHaxeTypes(rows, fieldsToMap(fields));
-                    var mysqlResult = new MySqlResult(this, result);
-                    if (result != null) {
-                        mysqlResult.affectedRows = result.affectedRows;
-                        mysqlResult.lastInsertId = result.insertId;
-                    }
-                    resolve(mysqlResult);
-                });
-            }
+                    return;
+                }
+                /*
+                if (rows == null || rows.length == 0) {
+                    resolve(new MySqlResult(this, null));
+                }
+                */
+                var result:Dynamic = null;
+                if (rows is Array) {
+                    result = rows[0];
+                } else {
+                    result = rows;
+                }
+                convertToHaxeTypes(rows, fieldsToMap(fields));
+                var mysqlResult = new MySqlResult(this, result);
+                if (result != null) {
+                    mysqlResult.affectedRows = result.affectedRows;
+                    mysqlResult.lastInsertId = result.insertId;
+                }
+                resolve(mysqlResult);
+            });
         });
     }
 
     public override function query(sql:String, ?param:Dynamic):Promise<MySqlResult<Array<Dynamic>>> {
         return new Promise((resolve, reject) -> {
             log.data("query:", [sql, param]);
-            if (_nativePool != null) {
-                _nativePool.query(sql, params(param), (error, rows, fields) -> {
-                    if (error != null) {
-                        if (!checkForDisconnection(error.message, CALL_QUERY, sql, param, resolve, reject)) {
-                            reject(new MySqlError("Error", error.message));
-                        }
-                        return;
+            _nativeConnection.query(sql, params(param), (error, rows, fields) -> {
+                _nativeConnection.unprepare(sql);
+                if (error != null) {
+                    if (!checkForDisconnection(error.message, CALL_QUERY, sql, param, resolve, reject)) {
+                        reject(new MySqlError("Error", error.message));
                     }
+                    return;
+                }
 
-                    convertToHaxeTypes(rows, fieldsToMap(fields));
-                    resolve(new MySqlResult(this, rows));
-                });
-            } else if (_nativeConnection != null) {
-                _nativeConnection.query(sql, params(param), (error, rows, fields) -> {
-                    _nativeConnection.unprepare(sql);
-                    if (error != null) {
-                        if (!checkForDisconnection(error.message, CALL_QUERY, sql, param, resolve, reject)) {
-                            reject(new MySqlError("Error", error.message));
-                        }
-                        return;
-                    }
-
-                    convertToHaxeTypes(rows, fieldsToMap(fields));
-                    resolve(new MySqlResult(this, rows));
-                });
-            }
+                convertToHaxeTypes(rows, fieldsToMap(fields));
+                resolve(new MySqlResult(this, rows));
+            });
         });
     }
 
     public override function all(sql:String, ?param:Dynamic):Promise<MySqlResult<Array<Dynamic>>> {
         return new Promise((resolve, reject) -> {
             log.data("all:", [sql, param]);
-            if (_nativePool != null) {
-                _nativePool.execute(sql, params(param), (error, rows, fields) -> {
-                    if (error != null) {
-                        if (!checkForDisconnection(error.message, CALL_ALL, sql, param, resolve, reject)) {
-                            reject(new MySqlError("Error", error.message));
-                        }
-                        return;
+            _nativeConnection.execute(sql, params(param), (error, rows, fields) -> {
+                _nativeConnection.unprepare(sql);
+                if (error != null) {
+                    if (!checkForDisconnection(error.message, CALL_ALL, sql, param, resolve, reject)) {
+                        reject(new MySqlError("Error", error.message));
                     }
+                    return;
+                }
 
-                    if (rows == null) {
-                        resolve(new MySqlResult(this, []));
-                    }
+                if (rows == null) {
+                    resolve(new MySqlResult(this, []));
+                }
 
-                    convertToHaxeTypes(rows, fieldsToMap(fields));
-                    resolve(new MySqlResult(this, rows));
-                });
-            } else if (_nativeConnection != null) {
-                _nativeConnection.execute(sql, params(param), (error, rows, fields) -> {
-                    _nativeConnection.unprepare(sql);
-                    if (error != null) {
-                        if (!checkForDisconnection(error.message, CALL_ALL, sql, param, resolve, reject)) {
-                            reject(new MySqlError("Error", error.message));
-                        }
-                        return;
-                    }
-
-                    if (rows == null) {
-                        resolve(new MySqlResult(this, []));
-                    }
-
-                    convertToHaxeTypes(rows, fieldsToMap(fields));
-                    resolve(new MySqlResult(this, rows));
-                });
-            }
+                convertToHaxeTypes(rows, fieldsToMap(fields));
+                resolve(new MySqlResult(this, rows));
+            });
         });
     }
 
     public override function close() {
-        if (_nativeConnection != null) {
-            _nativeConnection.end();
-        }
-        if (_nativePool != null) {
-            _nativePool.end();
-        }
+        _nativeConnection.end();
     }
 
     private function params(param:Dynamic):Array<Dynamic> {
