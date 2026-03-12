@@ -40,7 +40,7 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     port: port,
                     rowsAsArray: false,
                     waitForConnections: true,
-                    connectionLimit: 100,
+                    connectionLimit: 10,
                     queueLimit: 0
                 });            
 
