@@ -6,4 +6,5 @@ typedef ConnectionDetails = {
     var ?port:Int;
     var ?user:String;
     var ?pass:String;
+    var ?noPooling:Bool;
 }
