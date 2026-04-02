@@ -153,14 +153,10 @@ class DatabaseConnection extends DatabaseConnectionBase {
                     "\"" + _nativeConnection.escapeString(p) + "\"";
                 case TBool:
                     p == true ? 1 : 0;
-                case TFloat:
-                    p;
-                case TInt:
-                    p;
-                case TNull:
+                case TFloat | TInt | TNull | TInt64:
                     p;
                 case _:
-                    trace("UKNONWN:", Type.typeof(p));
+                    trace("UNKNOWN:", Type.typeof(p));
                     p;
             }
             return Std.string(v);
